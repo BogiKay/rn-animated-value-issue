@@ -7,6 +7,7 @@ import {
   View,
   useAnimatedValue,
   Text,
+  Platform,
 } from 'react-native';
 
 type Props = {
@@ -16,17 +17,38 @@ type Props = {
   onPress: () => void;
 };
 
-const MyButton = ({elevation, label, disabled, onPress}: Props) => {
-  const elevationLevel = [0, 3, 6, 9, 12, 15];
-  const elevated = elevation !== undefined;
+const elevationLevel = [0, 3, 6, 9, 12, 15];
+const inputRange = [0, 1, 2, 3, 4, 5];
 
+const MyButton = ({elevation, label, disabled, onPress}: Props) => {
   const style = {
-    ...(elevated && {
-      elevation: elevation.interpolate({
-        inputRange,
-        outputRange: elevationLevel,
+    ...(elevation &&
+      Platform.OS === 'android' && {
+        elevation: elevation.interpolate({
+          inputRange,
+          outputRange: elevationLevel,
+        }),
       }),
-    }),
+    ...(elevation &&
+      Platform.OS === 'ios' && {
+        shadowColor: '#000',
+        shadowOpacity: elevation.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 0.3],
+          extrapolate: 'clamp',
+        }),
+        shadowOffset: {
+          width: 0,
+          height: elevation.interpolate({
+            inputRange,
+            outputRange: [0, 1, 1, 1, 2, 4],
+          }),
+        },
+        shadowRadius: elevation.interpolate({
+          inputRange,
+          outputRange: [0, 1, 2, 3, 3, 4],
+        }),
+      }),
   };
 
   return (
@@ -99,7 +121,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
 });
-
-const inputRange = [0, 1, 2, 3, 4, 5];
 
 export default App;
