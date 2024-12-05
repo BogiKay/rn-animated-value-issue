@@ -1,118 +1,105 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
+  Animated,
   SafeAreaView,
-  ScrollView,
-  StatusBar,
   StyleSheet,
-  Text,
-  useColorScheme,
+  Pressable,
   View,
+  useAnimatedValue,
+  Text,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+type Props = {
+  elevation?: Animated.Value;
+  label: string;
+  disabled?: boolean;
+  onPress: () => void;
+};
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const MyButton = ({elevation, label, disabled, onPress}: Props) => {
+  const elevationLevel = [0, 3, 6, 9, 12, 15];
+  const elevated = elevation !== undefined;
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const style = {
+    ...(elevated && {
+      elevation: elevation.interpolate({
+        inputRange,
+        outputRange: elevationLevel,
+      }),
+    }),
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+    <Pressable onPress={onPress} disabled={disabled}>
+      <Animated.View
+        style={[styles.button, disabled && styles.disabledButton, style]}>
+        <Text>{label}</Text>
+      </Animated.View>
+    </Pressable>
+  );
+};
+
+function App(): React.JSX.Element {
+  const [disabled, setDisabled] = useState(false);
+  const {current: elevation} = useRef(useAnimatedValue(0));
+
+  // This breaks updating background of MyButton
+  useEffect(() => {
+    elevation.setValue(disabled ? 15 : 0);
+  }, [elevation, disabled]);
+
+  // This is working fine
+  // useEffect(() => {
+  //   Animated.timing(elevation, {
+  //     toValue: 15,
+  //     duration: 2000,
+  //     useNativeDriver: true,
+  //   }).start();
+  // }, [elevation]);
+
+  return (
+    <SafeAreaView>
+      <View style={styles.buttonContainer}>
+        <MyButton
+          elevation={elevation}
+          label="Click to disable"
+          onPress={() => setDisabled(prev => !prev)}
+        />
+        <MyButton
+          label="Button without elevation"
+          disabled={disabled}
+          onPress={() => {}}
+        />
+        <MyButton
+          elevation={elevation} // if we do not pass elevation, then background update works fine
+          label="Button with elevation"
+          disabled={disabled}
+          onPress={() => {}}
+        />
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  buttonContainer: {
+    padding: 30,
+    backgroundColor: 'white',
+    height: '100%',
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  disabledButton: {
+    backgroundColor: 'gray',
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
+  button: {
+    backgroundColor: 'yellow',
+    margin: 16,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: 'blue',
+    borderRadius: 10,
   },
 });
+
+const inputRange = [0, 1, 2, 3, 4, 5];
 
 export default App;
